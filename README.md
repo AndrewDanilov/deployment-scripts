@@ -17,7 +17,9 @@ site directory structure, database and git repo for autodeployment.
 ./init site <site_domain> <template> <ssh_username> [<ssh_password>]
 ```
 Where `<template>` is config template preset. Can be one of simple, yii.
-If `<ssh_password>` not set it would be generated
+
+If `<ssh_password>` not set it would be generated.
+
 Examples:
 ```shell
 ./init site example.com simple user1 1234567890
@@ -26,20 +28,26 @@ Examples:
 
 ### Making git bare repo autodeployment set
 ```shell
-./init git <path_to_project> [<branch_name>]
+./init git <path_to_project> <username> [<branch_name>]
 ```
-If `<branch_name>` not set it would be "master"
+Where `<project_path>` is path to your project where git repo will be created.
+
+Where `<username>` is the user that will be set as the owner for the .git directory.
+
+If `<branch_name>` not set it would be "master".
+
 Examples:
 ```shell
-./init git "/var/www/user1/www/example.com" main
-./init git "/var/www/user1/www/example.com"
+./init git "/var/www/user1/www/example.com" user1 main
+./init git "/var/www/user1/www/example.com" user1
 ```
 
 ### Making database
 ```shell
 ./init db <dbname> <dbuser> [<dbpass>]
 ```
-If `<dbpass>` not set it would be generated
+If `<dbpass>` not set it would be generated.
+
 Examples:
 ```shell
 ./init db database1 dbuser1 1234567890
@@ -48,34 +56,44 @@ Examples:
 
 ### Making project setup
 ```shell
-./init setup <project_path> [options]
+./init setup <project_path> <username> [options]
 ```
 Where `<project_path>` is path to your project within which commands will be executed.
+
+Where `<username>` is the user that will be set as the owner for the project directory and its content.
+
 Where options:
 - `composer-install` - composer install
 - `yii-init` - yii init production
 - `yii-config` - yii database config file
 - `yii-migrate` - yii database migrations
-If no options used - all of them will be applied
+
+If no options used - all of them will be applied.
+
 Examples:
 ```shell
-./init setup /var/www/user1/www/example.com composer-install yii-init yii-config yii-migrate npm
-./init setup /var/www/user1/www/example.com
+./init setup /var/www/user1/www/example.com user1 composer-install yii-init yii-config yii-migrate npm
+./init setup /var/www/user1/www/example.com user1
 ```
 
 ### Making npm-project setup
 ```shell
-./init npm <npm_project_path> [options]
+./init npm <npm_project_path> <username> [options]
 ```
 Where `<npm_project_path>` is path to your npm-project files within which commands will be executed.
+
+Where `<username>` is the user that will be set as the owner for the npm-project directory and its content.
+
 Where options:
 - `install` - instal npm dependencies
 - `build` - run build script
-If no options used - all of them will be applied
+
+If no options used - all of them will be applied.
+
 Examples:
 ```shell
-./init npm /var/www/user1/www/example.com/vuejs install build
-./init npm /var/www/user1/www/example.com/vuejs
+./init npm /var/www/user1/www/example.com/vuejs user1 install build
+./init npm /var/www/user1/www/example.com/vuejs user1
 ```
 
 ### Additional script params

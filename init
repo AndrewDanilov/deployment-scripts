@@ -13,11 +13,13 @@
 #   ./init site example.com yii user1
 
 # Making git bare repo usage:
-#   ./init git <path_to_project> [<branch_name>]
+#   ./init git <project_path> <username> [<branch_name>]
+# Where <project_path> is path to your project where git repo will be created.
+# Where <username> is the user that will be set as the owner for the .git directory.
 # If <branch_name> not set it would be "master"
 # Examples:
-#   ./init git "/var/www/user1/www/example.com" main
-#   ./init git "/var/www/user1/www/example.com"
+#   ./init git "/var/www/user1/www/example.com" user1 main
+#   ./init git "/var/www/user1/www/example.com" user1
 
 # Making database usage:
 #   ./init db <dbname> <dbuser> [<dbpass>]
@@ -27,8 +29,9 @@
 #   ./init db database1 dbuser1
 
 # Making project setup usage:
-#   ./init setup <project_path> [options]
+#   ./init setup <project_path> <username> [options]
 # Where <project_path> is path to your project within which commands will be executed.
+# Where <username> is the user that will be set as the owner for the project directory and its content.
 # Where options:
 #   composer-install - composer install
 #   yii-init - yii init production
@@ -36,19 +39,20 @@
 #   yii-migrate - yii database migrations
 # If no options used - all of them will be applied
 # Examples:
-#   ./init setup /var/www/user1/www/example.com composer-install yii-init yii-config yii-migrate npm
-#   ./init setup /var/www/user1/www/example.com
+#   ./init setup /var/www/user1/www/example.com user1 composer-install yii-init yii-config yii-migrate npm
+#   ./init setup /var/www/user1/www/example.com user1
 
 # Making npm-project setup usage:
-#   ./init npm <npm_project_path> [options]
+#   ./init npm <npm_project_path> <username> [options]
 # Where <npm_project_path> is path to your npm-project files within which commands will be executed.
+# Where <username> is the user that will be set as the owner for the npm-project directory and its content.
 # Where options:
 #   install - instal npm dependencies
 #   build - run build script
 # If no options used - all of them will be applied
 # Examples:
-#   ./init npm /var/www/user1/www/example.com/vuejs install build
-#   ./init npm /var/www/user1/www/example.com/vuejs
+#   ./init npm /var/www/user1/www/example.com/vuejs user1 install build
+#   ./init npm /var/www/user1/www/example.com/vuejs user1
 
 # Script params
 is_mariadb=true
@@ -155,10 +159,16 @@ elif [ "$action" = "git" ]; then
   echo "Создание bare репозитория."
 
   project_path=$2
-  branch=$3
+  username=$3
+  branch=$4
 
   if [[ ! "$project_path" || ! -d "$project_path" ]]; then
     echo "Необходимо указать абсолютный путь к директории проекта и эта директория должна существовать."
+    exit
+  fi
+
+  if [ ! "$username" ]; then
+    echo "Необходимо указать имя пользователя, который будет установлен в качестве владельца директории .git."
     exit
   fi
 
@@ -183,12 +193,16 @@ elif [ "$action" = "git" ]; then
   sed -i "s:<php_executable>:$php_executable:g" "$project_path/.git/hooks/post-receive"
   sed -i "s:<composer_executable>:$composer_executable:g" "$project_path/.git/hooks/post-receive"
 
+  echo "Задаю владельца и права доступа для директории .git."
+  chown -R "$username":"$username" "$project_path/.git"
+  chmod 0755 "$project_path/.git"
+
   echo "===="
   echo "Создан bare репозиторий"
   echo "Полный путь: $project_path/.git"
   echo "Ветка по-умолчанию: $branch"
   echo "Не забудьте прикрепить удаленный репозиторий к вашему локальному и выполнить push с него на удаленный:"
-  echo "  git remote add prod ssh://username@domain_or_ip:22$project_path/.git"
+  echo "  git remote add prod ssh://$username@domain_or_ip:22$project_path/.git"
   echo "  git push prod $branch"
 
 elif [ "$action" = "db" ]; then
@@ -239,12 +253,18 @@ elif [ "$action" = "setup" ]; then
   echo "Установка зависимостей и настройки."
 
   project_path=$2
-  shift 2 # удаляем первые два параметра, чтобы остались только опции
+  username=$3
+  shift 3 # удаляем первые три параметра, чтобы остались только опции
   options_count=$#
   options=$*
 
   if [[ ! "$project_path" || ! -d "$project_path" ]]; then
     echo "Необходимо указать абсолютный путь к директории проекта."
+    exit
+  fi
+
+  if [ ! "$username" ]; then
+    echo "Необходимо указать имя пользователя, который будет установлен в качестве владельца директории проекта."
     exit
   fi
 
@@ -298,17 +318,28 @@ elif [ "$action" = "setup" ]; then
     "$php_executable" "$project_path/yii" migrate --migrationPath=@andrewdanilov/custompages/console/migrations
   fi
 
+  echo "Задаю владельца директории проекта."
+  chown -R "$username":"$username" "$project_path"
+
+  echo "Установка завершена."
+
 elif [ "$action" = "npm" ]; then
 
   echo "Установка зависимостей и билд npm."
 
   npm_project_path=$2
-  shift 2 # удаляем первые два параметра, чтобы остались только опции
+  username=$3
+  shift 3 # удаляем первые три параметра, чтобы остались только опции
   options_count=$#
   options=$*
 
   if [[ ! "$npm_project_path" || ! -d "$npm_project_path" ]]; then
-    echo "Необходимо указать абсолютный путь к директории проекта."
+    echo "Необходимо указать абсолютный путь к директории npm-проекта."
+    exit
+  fi
+
+  if [ ! "$username" ]; then
+    echo "Необходимо указать имя пользователя, который будет установлен в качестве владельца директории npm-проекта."
     exit
   fi
 
@@ -327,6 +358,11 @@ elif [ "$action" = "npm" ]; then
     echo "Выполняю npm-скрипт build."
     "$npm_executable" run build --prefix "$npm_project_path"
   fi
+
+  echo "Задаю владельца директории npm-проекта."
+  chown -R "$username":"$username" "$npm_project_path"
+
+  echo "Установка завершена."
 
 else
 
