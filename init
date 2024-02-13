@@ -2,32 +2,32 @@
 
 # Script for deploying site.
 # Common usage:
-#   ./deploy site|git|db|setup options
+#   ./init site|git|db|setup options
 
 # Making site usage:
-#   ./deploy site <site_domain> <template> <ssh_username> [<ssh_password>]
+#   ./init site <site_domain> <template> <ssh_username> [<ssh_password>]
 # Where <template> is config template preset. Can be one of simple, yii.
 # If <ssh_password> not set it would be generated
 # Examples:
-#   ./deploy site example.com simple user1 1234567890
-#   ./deploy site example.com yii user1
+#   ./init site example.com simple user1 1234567890
+#   ./init site example.com yii user1
 
 # Making git bare repo usage:
-#   ./deploy git <path_to_project> [<branch_name>]
+#   ./init git <path_to_project> [<branch_name>]
 # If <branch_name> not set it would be "master"
 # Examples:
-#   ./deploy git "/var/www/user1/www/example.com" main
-#   ./deploy git "/var/www/user1/www/example.com"
+#   ./init git "/var/www/user1/www/example.com" main
+#   ./init git "/var/www/user1/www/example.com"
 
 # Making database usage:
-#   ./deploy db <dbname> <dbuser> [<dbpass>]
+#   ./init db <dbname> <dbuser> [<dbpass>]
 # If <dbpass> not set it would be generated
 # Examples:
-#   ./deploy db database1 dbuser1 1234567890
-#   ./deploy db database1 dbuser1
+#   ./init db database1 dbuser1 1234567890
+#   ./init db database1 dbuser1
 
 # Making project setup usage:
-#   ./deploy setup <project_path> [options]
+#   ./init setup <project_path> [options]
 # Where <project_path> is path to your project within which commands will be executed.
 # Where options:
 #   composer-install - composer install
@@ -36,19 +36,19 @@
 #   yii-migrate - yii database migrations
 # If no options used - all of them will be applied
 # Examples:
-#   ./deploy setup /var/www/user1/www/example.com composer-install yii-init yii-config yii-migrate npm
-#   ./deploy setup /var/www/user1/www/example.com
+#   ./init setup /var/www/user1/www/example.com composer-install yii-init yii-config yii-migrate npm
+#   ./init setup /var/www/user1/www/example.com
 
 # Making npm-project setup usage:
-#   ./deploy npm <npm_project_path> [options]
+#   ./init npm <npm_project_path> [options]
 # Where <npm_project_path> is path to your npm-project files within which commands will be executed.
 # Where options:
 #   install - instal npm dependencies
 #   build - run build script
 # If no options used - all of them will be applied
 # Examples:
-#   ./deploy npm /var/www/user1/www/example.com/vuejs install build
-#   ./deploy npm /var/www/user1/www/example.com/vuejs
+#   ./init npm /var/www/user1/www/example.com/vuejs install build
+#   ./init npm /var/www/user1/www/example.com/vuejs
 
 # Script params
 is_mariadb=true

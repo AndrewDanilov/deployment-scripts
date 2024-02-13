@@ -9,46 +9,46 @@ site directory structure, database and git repo for autodeployment.
 
 ### Common usage
 ```shell
-./deploy site|git|db|setup options
+./init site|git|db|setup options
 ```
 
 ### Making site
 ```shell
-./deploy site <site_domain> <template> <ssh_username> [<ssh_password>]
+./init site <site_domain> <template> <ssh_username> [<ssh_password>]
 ```
 Where `<template>` is config template preset. Can be one of simple, yii.
 If `<ssh_password>` not set it would be generated
 Examples:
 ```shell
-./deploy site example.com simple user1 1234567890
-./deploy site example.com yii user1
+./init site example.com simple user1 1234567890
+./init site example.com yii user1
 ```
 
 ### Making git bare repo autodeployment set
 ```shell
-./deploy git <path_to_project> [<branch_name>]
+./init git <path_to_project> [<branch_name>]
 ```
 If `<branch_name>` not set it would be "master"
 Examples:
 ```shell
-./deploy git "/var/www/user1/www/example.com" main
-./deploy git "/var/www/user1/www/example.com"
+./init git "/var/www/user1/www/example.com" main
+./init git "/var/www/user1/www/example.com"
 ```
 
 ### Making database
 ```shell
-./deploy db <dbname> <dbuser> [<dbpass>]
+./init db <dbname> <dbuser> [<dbpass>]
 ```
 If `<dbpass>` not set it would be generated
 Examples:
 ```shell
-./deploy db database1 dbuser1 1234567890
-./deploy db database1 dbuser1
+./init db database1 dbuser1 1234567890
+./init db database1 dbuser1
 ```
 
 ### Making project setup
 ```shell
-./deploy setup <project_path> [options]
+./init setup <project_path> [options]
 ```
 Where `<project_path>` is path to your project within which commands will be executed.
 Where options:
@@ -59,13 +59,13 @@ Where options:
 If no options used - all of them will be applied
 Examples:
 ```shell
-./deploy setup /var/www/user1/www/example.com composer-install yii-init yii-config yii-migrate npm
-./deploy setup /var/www/user1/www/example.com
+./init setup /var/www/user1/www/example.com composer-install yii-init yii-config yii-migrate npm
+./init setup /var/www/user1/www/example.com
 ```
 
 ### Making npm-project setup
 ```shell
-./deploy npm <npm_project_path> [options]
+./init npm <npm_project_path> [options]
 ```
 Where `<npm_project_path>` is path to your npm-project files within which commands will be executed.
 Where options:
@@ -74,8 +74,8 @@ Where options:
 If no options used - all of them will be applied
 Examples:
 ```shell
-./deploy npm /var/www/user1/www/example.com/vuejs install build
-./deploy npm /var/www/user1/www/example.com/vuejs
+./init npm /var/www/user1/www/example.com/vuejs install build
+./init npm /var/www/user1/www/example.com/vuejs
 ```
 
 ### Additional script params
