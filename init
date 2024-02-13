@@ -268,7 +268,7 @@ elif [ "$action" = "setup" ]; then
     exit
   fi
 
-  if [[ ! -f "$project_path/init" || ! -f "$project_path/common/config/main-local.php" ]]; then
+  if [[ ! -f "$project_path/init" ]]; then
     echo "Директория проекта пустая или не является валидной установкой Yii2-advanced."
     exit
   fi
@@ -284,6 +284,12 @@ elif [ "$action" = "setup" ]; then
   fi
 
   if [[ "$options" =~ yii-config || $options_count == 0 ]]; then
+
+    if [[ ! -f "$project_path/common/config/main-local.php" ]]; then
+      echo "Шаблон yii еще не был инициализирован. Необходимо вначале выполнить инициализацию командой 'php init' или './init setup <project_path> <username> yii-init'."
+      exit
+    fi
+
     echo "Конфигурирую настройки yii."
     echo "Для продолжения необходимо указать настройки базы данных."
     read -rp "Хост базы данных [localhost]: " dbhost
