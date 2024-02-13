@@ -168,7 +168,7 @@ elif [ "$action" = "git" ]; then
   fi
 
   echo "Создаю .git директорию для будущего bare репозитория."
-  mkdir "$project_path/.git"
+  mkdir -p "$project_path/.git"
 
   echo "Инициализирую bare репозиторий."
   git init --bare "$project_path/.git"
