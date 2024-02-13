@@ -229,6 +229,8 @@ elif [ "$action" = "db" ]; then
   fi
 
   read -srp "Для продолжения введите пароль root пользователя mysql: " mysql_root_pass
+  # после read -s нужен перенос строки
+  echo ""
 
   echo "Создаю базу данных $dbname."
   mysql -u"root" -p"$mysql_root_pass" -e "CREATE DATABASE $dbname CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
@@ -280,7 +282,7 @@ elif [ "$action" = "setup" ]; then
 
   if [[ "$options" =~ yii-init || $options_count == 0 ]]; then
     echo "Инициализирую yii шаблон для среды production."
-    "$php_executable" "$project_path/init"
+    "$php_executable" "$project_path/init" --env=Production --overwrite=y
   fi
 
   if [[ "$options" =~ yii-config || $options_count == 0 ]]; then
@@ -296,6 +298,8 @@ elif [ "$action" = "setup" ]; then
     read -rp "Имя базы данных [yii2advanced]: " dbname
     read -rp "Имя пользователя базы данных [yii2advanced]: " dbuser
     read -srp "Пароль пользователя базы данных [secret]: " dbpass
+    # после read -s нужен перенос строки
+    echo ""
 
     if [ ! "$dbhost" ]; then
       dbhost="localhost"
@@ -311,9 +315,10 @@ elif [ "$action" = "setup" ]; then
     fi
 
     echo "Применяю настройки."
-    sed -i "s/mysql:host=localhost;dbname=yii2advanced/mysql:host=$dbhost;dbname=$dbname/g" "$project_path/common/config/main-local.php"
-    sed -i "s/'username' => 'root'/'username' => '$dbuser'/g" "$project_path/common/config/main-local.php"
-    sed -i "s/'password' => ''/'password' => '$dbpass'/g" "$project_path/common/config/main-local.php"
+    sed -i "/'dsn'/s/host=\w+/host=$dbhost/1" "$project_path/common/config/main-local.php"
+    sed -i "/'dsn'/s/dbname=\w+/dbname=$dbname/1" "$project_path/common/config/main-local.php"
+    sed -i "/'username'/s/'root'/'$dbuser'/1" "$project_path/common/config/main-local.php"
+    sed -i "/'password'/s/''/'$dbpass'/1" "$project_path/common/config/main-local.php"
   fi
 
   if [[ "$options" =~ yii-migrate || $options_count == 0 ]]; then
