@@ -179,17 +179,17 @@ elif [ "$action" = "git" ]; then
   echo "Создаю git hook для развертывания сайта после получения данных."
   cp git/post-receive.example "$project_path/.git/hooks/post-receive"
   chmod +x "$project_path/.git/hooks/post-receive"
-  sed -i "s/<project_path>/$project_path/g" "$project_path/.git/hooks/post-receive"
-  sed -i "s/<php_executable>/$php_executable/g" "$project_path/.git/hooks/post-receive"
-  sed -i "s/<composer_executable>/$composer_executable/g" "$project_path/.git/hooks/post-receive"
+  sed -i "s:<project_path>:$project_path:g" "$project_path/.git/hooks/post-receive"
+  sed -i "s:<php_executable>:$php_executable:g" "$project_path/.git/hooks/post-receive"
+  sed -i "s:<composer_executable>:$composer_executable:g" "$project_path/.git/hooks/post-receive"
 
   echo "===="
   echo "Создан bare репозиторий"
   echo "Полный путь: $project_path/.git"
   echo "Ветка по-умолчанию: $branch"
-  echo "Не забудьте прикрепить удаленный репозиторий к вашему локальному выполнить push с него на удаленный:"
-  echo " git remote add prod ssh://username@domain_or_ip:22$project_path/.git"
-  echo " git push prod $branch"
+  echo "Не забудьте прикрепить удаленный репозиторий к вашему локальному и выполнить push с него на удаленный:"
+  echo "  git remote add prod ssh://username@domain_or_ip:22$project_path/.git"
+  echo "  git push prod $branch"
 
 elif [ "$action" = "db" ]; then
 
