@@ -95,7 +95,7 @@ if [ "$action" = "site" ]; then
   echo "Создаю пользователя $username."
   if id "$username" >/dev/null 2>&1; then
     read -rp "Такой пользователь уже есть в системе. Пользователю будет присвоен новый пароль. Продолжить в любом случае? [N|y]: " continue_anyway
-    if [[ ! "$continue_anyway" =~ [Yy]|yes ]]; then
+    if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
       exit
     fi
   else
