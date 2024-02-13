@@ -1,0 +1,328 @@
+#!/bin/bash
+
+# Script for deploying site.
+# Common usage:
+#   ./deploy site|git|db|setup options
+
+# Making site usage:
+#   ./deploy site <site_domain> <template> <ssh_username> [<ssh_password>]
+# Where <template> is config template preset. Can be one of simple, yii.
+# If <ssh_password> not set it would be generated
+# Examples:
+#   ./deploy site example.com simple user1 1234567890
+#   ./deploy site example.com yii user1
+
+# Making git bare repo usage:
+#   ./deploy git <path_to_project> [<branch_name>]
+# If <branch_name> not set it would be "master"
+# Examples:
+#   ./deploy git "/var/www/user1/www/example.com" main
+#   ./deploy git "/var/www/user1/www/example.com"
+
+# Making database usage:
+#   ./deploy db <dbname> <dbuser> [<dbpass>]
+# If <dbpass> not set it would be generated
+# Examples:
+#   ./deploy db database1 dbuser1 1234567890
+#   ./deploy db database1 dbuser1
+
+# Making project setup usage:
+#   ./deploy setup <project_path> [options]
+# Where <project_path> is path to your project within which commands will be executed.
+# Where options:
+#   composer-install - composer install
+#   yii-init - yii init production
+#   yii-config - yii database config file
+#   yii-migrate - yii database migrations
+# If no options used - all of them will be applied
+# Examples:
+#   ./deploy setup /var/www/user1/www/example.com composer-install yii-init yii-config yii-migrate npm
+#   ./deploy setup /var/www/user1/www/example.com
+
+# Making npm-project setup usage:
+#   ./deploy npm <npm_project_path> [options]
+# Where <npm_project_path> is path to your npm-project files within which commands will be executed.
+# Where options:
+#   install - instal npm dependencies
+#   build - run build script
+# If no options used - all of them will be applied
+# Examples:
+#   ./deploy npm /var/www/user1/www/example.com/vuejs install build
+#   ./deploy npm /var/www/user1/www/example.com/vuejs
+
+# Script params
+is_mariadb=true
+php_executable="/usr/bin/php81"
+composer_executable="/usr/bin/composer"
+npm_executable="/usr/bin/npm"
+nginx_conf_dir="/etc/nginx/conf.d"
+php_fpm_conf_dir="/etc/opt/remi/php81/php-fpm.d"
+nginx_service="nginx"
+php_fpm_service="php81-php-fpm"
+# end of script params
+
+action=$1
+
+if [ "$action" = "site" ]; then
+
+  echo "Создание сайта."
+
+  domain=$2
+  template=$3
+  username=$4
+  password=$5
+
+  if [ ! "$domain" ]; then
+    echo "Не указано имя сайта!"
+    exit
+  fi
+
+  if [ ! "$username" ]; then
+    echo "Не указано имя пользователя!"
+    exit
+  fi
+
+  if [[ ! "$template" || "simple yii" =~ $template ]]; then
+    echo "Не указан или некорректно указан шаблон конфигов сайта! Использую simple"
+    template=simple
+  fi
+
+  if [ ! "$password" ]; then
+    echo "Не указан пароль пользователя. Генерирую случайный."
+    password=$(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 16)
+  fi
+
+  echo "Создаю пользователя $username."
+  useradd "$username"
+  passwd "$username"
+
+  echo "Добавляю пользователя nginx в группу $username."
+  usermod -aG "$username" nginx
+
+  echo "Создаю структуру каталогов для сайта $domain в /var/www/$username."
+  mkdir -p "/var/www/$username/www/$domain"
+  mkdir -p "/var/www/$username/logs"
+  mkdir -p "/var/www/$username/php-fpm"
+  mkdir -p "/var/www/$username/tmp"
+
+  echo "Задаю владельца и права для директорий сайта."
+  chown -R "$username":"$username" "/var/www/$username/"
+  chown root:root "/var/www/$username/"
+  chmod 0755 "/var/www/$username"
+  chmod 0750 "/var/www/$username/www"
+  chmod 0750 "/var/www/$username/logs"
+  chmod 0750 "/var/www/$username/php-fpm"
+  chmod 0777 "/var/www/$username/tmp"
+
+  echo "Создаю nginx конфиг для домена $domain"
+  nginx_conf="$nginx_conf_dir/$username/$domain.conf"
+  mkdir "$nginx_conf_dir/$username"
+  cp "nginx-vhost-$template.conf.example" "$nginx_conf"
+  sed -i "s/<domain>/$domain/g" "$nginx_conf"
+  sed -i "s:<project_path>:/var/www/$username/www/$domain:g" "$nginx_conf"
+  sed -i "s:<socket_path>:/var/www/$username/php-fpm/$domain.socket:g" "$nginx_conf"
+  sed -i "s:<logs_path>:/var/www/$username/logs:g" "$nginx_conf"
+
+  echo "Создаю php-fpm конфиг для домена $domain"
+  phpfpm_conf="$php_fpm_conf_dir/$domain.conf"
+  cp "php-fpm.conf.example" "$phpfpm_conf"
+  sed -i "s/<domain>/$domain/g" "$phpfpm_conf"
+  sed -i "s/<username>/$username/g" "$phpfpm_conf"
+  sed -i "s:<socket_path>:/var/www/$username/php-fpm/$domain.socket:g" "$phpfpm_conf"
+  sed -i "s:<logs_path>:/var/www/$username/logs:g" "$phpfpm_conf"
+
+  echo "Перезагружаю nginx."
+  service "$nginx_service" reload
+
+  echo "Перезапускаю php-fpm."
+  service "$php_fpm_service" reload
+
+  echo "===="
+  echo "Создан сайт $domain"
+  echo "Полный путь: /var/www/$username/www/$domain"
+  echo "SSH логин: $username"
+  echo "SSH пароль: $password"
+
+elif [ "$action" = "git" ]; then
+
+  echo "Создание bare репозитория."
+
+  project_path=$2
+  branch=$3
+
+  if [[ ! "$project_path" || ! -d "$project_path" ]]; then
+    echo "Необходимо указать абсолютный путь к директории проекта и эта директория должна существовать."
+    exit
+  fi
+
+  if [ ! "$branch" ]; then
+    echo "Не указана ветка репозитория. Использую стандартную master."
+    branch="master"
+  fi
+
+  echo "Создаю .git директорию для будущего bare репозитория."
+  mkdir "$project_path/.git"
+
+  echo "Инициализирую bare репозиторий."
+  git init --bare "$project_path/.git"
+
+  echo "Изменяю ветку по-умолчанию на $branch."
+  echo "ref: refs/heads/$branch" > "$project_path/.git/HEAD"
+
+  echo "Создаю git hook для развертывания сайта после получения данных."
+  cp git/post-receive.example "$project_path/.git/hooks/post-receive"
+  chmod +x "$project_path/.git/hooks/post-receive"
+  sed -i "s/<project_path>/$project_path/g" "$project_path/.git/hooks/post-receive"
+  sed -i "s/<php_executable>/$php_executable/g" "$project_path/.git/hooks/post-receive"
+  sed -i "s/<composer_executable>/$composer_executable/g" "$project_path/.git/hooks/post-receive"
+
+  echo "===="
+  echo "Создан bare репозиторий"
+  echo "Полный путь: $project_path/.git"
+  echo "Ветка по-умолчанию: $branch"
+  echo "Не забудьте прикрепить удаленный репозиторий к вашему локальному выполнить push с него на удаленный:"
+  echo " git remote add prod ssh://username@domain_or_ip:22$project_path/.git"
+  echo " git push prod $branch"
+
+elif [ "$action" = "db" ]; then
+
+  echo "Создание базы данных."
+
+  dbname=$2
+  dbuser=$3
+  dbpass=$4
+
+  if [ ! "$dbname" ]; then
+  echo "Не указано имя базы данных!"
+  exit
+  fi
+
+  if [ ! "$dbuser" ]; then
+  echo "Не указано имя пользователя!"
+  exit
+  fi
+
+  if [ ! "$dbpass" ]; then
+    echo "Не указан пароль пользователя. Генерирую случайный."
+    dbpass=$(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 16)
+  fi
+
+  read -srp "Для продолжения введите пароль root пользователя mysql: " mysql_root_pass
+
+  echo "Создаю базу данных $dbname."
+  mysql -u"root" -p"$mysql_root_pass" -e "CREATE DATABASE $dbname CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+  echo "Создаю пользователя $dbuser."
+  if [ "$is_mariadb" ]; then
+    mysql -u"root" -p"$mysql_root_pass" -e "CREATE USER '$dbuser'@'localhost' IDENTIFIED BY '$dbpass';"
+  else
+    mysql -u"root" -p"$mysql_root_pass" -e "CREATE USER '$dbuser'@'localhost' IDENTIFIED WITH mysql_native_password BY '$dbpass';"
+  fi
+
+  echo "Создаю разрешения для пользователя $dbuser."
+  mysql -u"root" -p"$mysql_root_pass" -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'localhost';"
+
+  echo "===="
+  echo "Создана база данных $dbname"
+  echo "Mysql логин: $dbuser"
+  echo "Myslq пароль: $dbpass"
+
+elif [ "$action" = "setup" ]; then
+
+  echo "Установка зависимостей и настройки."
+
+  project_path=$2
+  shift 2 # удаляем первые два параметра, чтобы остались только опции
+  options_count=$#
+  options=$*
+
+  if [[ ! "$project_path" || ! -d "$project_path" ]]; then
+    echo "Необходимо указать абсолютный путь к директории проекта."
+    exit
+  fi
+
+  if [[ ! -f "$project_path/init" || ! -f "$project_path/common/config/main-local.php" ]]; then
+    echo "Директория проекта пустая или не является валидной установкой Yii2-advanced."
+    exit
+  fi
+
+  if [[ "$options" =~ composer-install || $options_count == 0 ]]; then
+    echo "Устанавливаю зависимости композера."
+    "$php_executable" "$composer_executable" install --working-dir="$project_path"
+  fi
+
+  if [[ "$options" =~ yii-init || $options_count == 0 ]]; then
+    echo "Инициализирую yii шаблон для среды production."
+    "$php_executable" "$project_path/init"
+  fi
+
+  if [[ "$options" =~ yii-config || $options_count == 0 ]]; then
+    echo "Конфигурирую настройки yii."
+    echo "Для продолжения необходимо указать настройки базы данных."
+    read -rp "Хост базы данных [localhost]: " dbhost
+    read -rp "Имя базы данных [yii2advanced]: " dbname
+    read -rp "Имя пользователя базы данных [yii2advanced]: " dbuser
+    read -srp "Пароль пользователя базы данных [secret]: " dbpass
+
+    if [ ! "$dbhost" ]; then
+      dbhost="localhost"
+    fi
+    if [ ! "$dbname" ]; then
+      dbname="yii2advanced"
+    fi
+    if [ ! "$dbuser" ]; then
+      dbuser="yii2advanced"
+    fi
+    if [ ! "$dbpass" ]; then
+      dbpass="secret"
+    fi
+
+    echo "Применяю настройки."
+    sed -i "s/mysql:host=localhost;dbname=yii2advanced/mysql:host=$dbhost;dbname=$dbname/g" "$project_path/common/config/main-local.php"
+    sed -i "s/'username' => 'root'/'username' => '$dbuser'/g" "$project_path/common/config/main-local.php"
+    sed -i "s/'password' => ''/'password' => '$dbpass'/g" "$project_path/common/config/main-local.php"
+  fi
+
+  if [[ "$options" =~ yii-migrate || $options_count == 0 ]]; then
+    echo "Выполняю миграции."
+    "$php_executable" "$project_path/yii" migrate
+    "$php_executable" "$project_path/yii" migrate --migrationPath=@andrewdanilov/adminpanel/migrations
+    "$php_executable" "$project_path/yii" migrate --migrationPath=@andrewdanilov/sitedata/migrations
+    "$php_executable" "$project_path/yii" migrate --migrationPath=@andrewdanilov/custompages/console/migrations
+  fi
+
+elif [ "$action" = "npm" ]; then
+
+  echo "Установка зависимостей и билд npm."
+
+  npm_project_path=$2
+  shift 2 # удаляем первые два параметра, чтобы остались только опции
+  options_count=$#
+  options=$*
+
+  if [[ ! "$npm_project_path" || ! -d "$npm_project_path" ]]; then
+    echo "Необходимо указать абсолютный путь к директории проекта."
+    exit
+  fi
+
+  if [[ ! -f "$npm_project_path/package.json" ]]; then
+    echo "Директория проекта пустая или не является валидной установкой npm-проекта."
+    exit
+  fi
+
+  if [[ "$options" =~ install || $options_count == 0 ]]; then
+    echo "Устанавливаю зависимости npm-проекта."
+    mkdir -p "$npm_project_path/node_modules"
+    "$npm_executable" install --prefix "$npm_project_path"
+  fi
+
+  if [[ "$options" =~ build || $options_count == 0 ]]; then
+    echo "Выполняю npm-скрипт build."
+    "$npm_executable" run build --prefix "$npm_project_path"
+  fi
+
+else
+
+  echo "Не указано или указано некорректное действие."
+
+fi

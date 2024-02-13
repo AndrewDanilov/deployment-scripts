@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# The production directory and other utilities
+
+TARGET="<project_path>"
+PHP_EXECUTABLE="<php_executable>"
+COMPOSER_EXECUTABLE="<composer_executable>"
+
+# Checkout
+
+git --git-dir="$TARGET/.git" --work-tree="$TARGET" checkout -f >> git_checkout.log 2>&1
+
+# Other post-processing
+
+cd "$TARGET"
+
+"$PHP_EXECUTABLE" "$COMPOSER_EXECUTABLE" install >> composer_install.log 2>&1
+"$PHP_EXECUTABLE" yii migrate --interactive=0 --migrationPath=@andrewdanilov/adminpanel/migrations >> yii_migrate.log 2>&1
+"$PHP_EXECUTABLE" yii migrate --interactive=0 --migrationPath=@andrewdanilov/sitedata/migrations >> yii_migrate.log 2>&1
+"$PHP_EXECUTABLE" yii migrate --interactive=0 --migrationPath=@andrewdanilov/custompages/console/migrations >> yii_migrate.log 2>&1
+"$PHP_EXECUTABLE" yii migrate --interactive=0 >> yii_migrate.log 2>&1
+
+rm -rf frontend/runtime/cache/*
+rm -rf frontend/web/assets/*
+rm -rf backend/runtime/cache/*
+rm -rf backend/web/assets/*
