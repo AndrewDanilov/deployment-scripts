@@ -82,7 +82,7 @@ if [ "$action" = "site" ]; then
     exit
   fi
 
-  if [[ ! "$template" || "simple yii" =~ $template ]]; then
+  if [[ ! "$template" || ! "simple yii" =~ $template ]]; then
     echo "Не указан или некорректно указан шаблон конфигов сайта! Использую simple"
     template=simple
   fi
@@ -93,8 +93,15 @@ if [ "$action" = "site" ]; then
   fi
 
   echo "Создаю пользователя $username."
-  useradd "$username"
-  passwd "$username"
+  if id "$username" >/dev/null 2>&1; then
+    read -rp "Такой пользователь уже есть в системе. Пользователю будет присвоен новый пароль. Продолжить в любом случае? [N|y]: " continue_anyway
+    if [[ ! "$continue_anyway" =~ [Yy]|yes ]]; then
+      exit
+    fi
+  else
+      useradd "$username"
+  fi
+  echo "$password" | passwd "$username" --stdin
 
   echo "Добавляю пользователя nginx в группу $username."
   usermod -aG "$username" nginx
@@ -117,7 +124,7 @@ if [ "$action" = "site" ]; then
   echo "Создаю nginx конфиг для домена $domain"
   nginx_conf="$nginx_conf_dir/$username/$domain.conf"
   mkdir "$nginx_conf_dir/$username"
-  cp "nginx-vhost-$template.conf.example" "$nginx_conf"
+  cp "nginx/nginx-vhost-$template.conf.example" "$nginx_conf"
   sed -i "s/<domain>/$domain/g" "$nginx_conf"
   sed -i "s:<project_path>:/var/www/$username/www/$domain:g" "$nginx_conf"
   sed -i "s:<socket_path>:/var/www/$username/php-fpm/$domain.socket:g" "$nginx_conf"
@@ -125,7 +132,7 @@ if [ "$action" = "site" ]; then
 
   echo "Создаю php-fpm конфиг для домена $domain"
   phpfpm_conf="$php_fpm_conf_dir/$domain.conf"
-  cp "php-fpm.conf.example" "$phpfpm_conf"
+  cp "php-fpm/php-fpm-pool.conf.example" "$phpfpm_conf"
   sed -i "s/<domain>/$domain/g" "$phpfpm_conf"
   sed -i "s/<username>/$username/g" "$phpfpm_conf"
   sed -i "s:<socket_path>:/var/www/$username/php-fpm/$domain.socket:g" "$phpfpm_conf"
