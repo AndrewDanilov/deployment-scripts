@@ -79,7 +79,7 @@ Examples:
 ```
 
 ### Additional script params
-You can edit script params in section `# Script params` of `deploy` file.
+You can edit script params in section `# Script params` of `./init` file.
 
 #### Defaults are:
 - is_mariadb=true
