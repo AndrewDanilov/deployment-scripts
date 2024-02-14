@@ -22,11 +22,13 @@
 #   ./init git "/var/www/user1/www/example.com" user1
 
 # Making database usage:
-#   ./init db <dbname> <dbuser> [<dbpass>]
+#   ./init db <dbname> [<dbuser> [<dbpass>]]
+# If <dbuser> not set it would be equal to dbname
 # If <dbpass> not set it would be generated
 # Examples:
 #   ./init db database1 dbuser1 1234567890
 #   ./init db database1 dbuser1
+#   ./init db database1
 
 # Making project setup usage:
 #   ./init setup <project_path> <username> [options]
@@ -219,8 +221,8 @@ elif [ "$action" = "db" ]; then
   fi
 
   if [ ! "$dbuser" ]; then
-  echo "Не указано имя пользователя!"
-  exit
+  echo "Не указано имя пользователя. Использую имя базы данных в качестве имени пользователя."
+  dbuser="$dbname"
   fi
 
   if [ ! "$dbpass" ]; then

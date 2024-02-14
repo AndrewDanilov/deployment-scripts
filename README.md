@@ -44,14 +44,17 @@ Examples:
 
 ### Making database
 ```shell
-./init db <dbname> <dbuser> [<dbpass>]
+./init db <dbname> [ <dbuser> [<dbpass>] ]
 ```
+If `<dbuser>` not set it would be equal to dbname.
+
 If `<dbpass>` not set it would be generated.
 
 Examples:
 ```shell
 ./init db database1 dbuser1 1234567890
 ./init db database1 dbuser1
+./init db database1
 ```
 
 ### Making project setup
