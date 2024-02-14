@@ -314,19 +314,25 @@ elif [ "$action" = "setup" ]; then
       dbpass="secret"
     fi
 
+    # escaping "\" and "&" specialchars and double-escaping single quotes
+    dbpass_escaped=${dbpass}
+    dbpass_escaped=${dbpass_escaped//\\/\\\\}
+    dbpass_escaped=${dbpass_escaped//&/\\&}
+    dbpass_escaped=${dbpass_escaped//\'/\\\\\'}
+
     echo "Применяю настройки."
-    sed -i "/'dsn'/s/host=\w+/host=$dbhost/1" "$project_path/common/config/main-local.php"
-    sed -i "/'dsn'/s/dbname=\w+/dbname=$dbname/1" "$project_path/common/config/main-local.php"
+    sed -i "/'dsn'/s/host=localhost/host=$dbhost/1" "$project_path/common/config/main-local.php"
+    sed -i "/'dsn'/s/dbname=yii2advanced/dbname=$dbname/1" "$project_path/common/config/main-local.php"
     sed -i "/'username'/s/'root'/'$dbuser'/1" "$project_path/common/config/main-local.php"
-    sed -i "/'password'/s/''/'$dbpass'/1" "$project_path/common/config/main-local.php"
+    sed -i "/'password'/s/''/'$dbpass_escaped'/1" "$project_path/common/config/main-local.php"
   fi
 
   if [[ "$options" =~ yii-migrate || $options_count == 0 ]]; then
     echo "Выполняю миграции."
-    "$php_executable" "$project_path/yii" migrate
-    "$php_executable" "$project_path/yii" migrate --migrationPath=@andrewdanilov/adminpanel/migrations
-    "$php_executable" "$project_path/yii" migrate --migrationPath=@andrewdanilov/sitedata/migrations
-    "$php_executable" "$project_path/yii" migrate --migrationPath=@andrewdanilov/custompages/console/migrations
+    "$php_executable" "$project_path/yii" migrate --interactive=0
+    "$php_executable" "$project_path/yii" migrate --interactive=0 --migrationPath=@andrewdanilov/adminpanel/migrations
+    "$php_executable" "$project_path/yii" migrate --interactive=0 --migrationPath=@andrewdanilov/sitedata/migrations
+    "$php_executable" "$project_path/yii" migrate --interactive=0 --migrationPath=@andrewdanilov/custompages/console/migrations
   fi
 
   echo "Задаю владельца директории проекта."
