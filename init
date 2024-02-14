@@ -369,15 +369,18 @@ elif [ "$action" = "npm" ]; then
     echo "Устанавливаю зависимости npm-проекта."
     mkdir -p "$npm_project_path/node_modules"
     "$npm_executable" install --prefix "$npm_project_path"
+
+    echo "Задаю владельца директорий npm-проекта."
+    chown -R "$username":"$username" "$npm_project_path"
   fi
 
   if [[ "$options" =~ build || $options_count == 0 ]]; then
     echo "Выполняю npm-скрипт build."
     "$npm_executable" run build --prefix "$npm_project_path"
-  fi
 
-  echo "Задаю владельца директории npm-проекта."
-  chown -R "$username":"$username" "$npm_project_path"
+    echo "Задаю владельца директорий npm-проекта."
+    chown -R "$username":"$username" "$npm_project_path"
+  fi
 
   echo "Установка завершена."
 
