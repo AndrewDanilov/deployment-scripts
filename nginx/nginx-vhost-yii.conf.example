@@ -1,8 +1,8 @@
 server {
-    listen 80;
+    listen <domain_ip>80;
     server_name <domain>;
 
-    root <project_path>/frontend/web/;
+    root <project_path>/frontend/web;
 
     index index.php index.html;
     charset utf-8;
@@ -45,10 +45,10 @@ server {
 }
 
 server {
-    listen 80;
+    listen <domain_ip>80;
     server_name admin.<domain>;
 
-    root <project_path>/backend/web/;
+    root <project_path>/backend/web;
 
     index index.php index.html;
     charset utf-8;
@@ -74,7 +74,7 @@ server {
 
     # calls to "upload" folder static files processed to frontend
     location ~ ^/upload/ {
-        root <project_path>/frontend/web/;
+        root <project_path>/frontend/web;
         try_files $uri $uri/ =404;
     }
 

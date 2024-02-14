@@ -14,9 +14,15 @@ site directory structure, database and git repo for autodeployment.
 
 ### Making site
 ```shell
-./init site <site_domain> <template> <ssh_username> [<ssh_password>]
+./init site <site_domain>[:<site_ip>] <template> <ssh_username> [<ssh_password>]
 ```
+Where `<site_domain>` is web domain, which would be placed at nginx config for listenting connections.
+
+Where `<site_ip>` is server ip, which would be placed at nginx config for listenting connections.
+
 Where `<template>` is config template preset. Can be one of simple, yii.
+
+`<site_ip>` can be omitted, but it can be required on some server configurations.
 
 If `<ssh_password>` not set it would be generated.
 

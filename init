@@ -5,8 +5,11 @@
 #   ./init site|git|db|setup options
 
 # Making site usage:
-#   ./init site <site_domain> <template> <ssh_username> [<ssh_password>]
+#   ./init site <site_domain>[:<site_ip>] <template> <ssh_username> [<ssh_password>]
+# Where <site_domain> is web domain, which would be placed at nginx config for listenting connections.
+# Where <site_ip> is server ip, which would be placed at nginx config for listenting connections.
 # Where <template> is config template preset. Can be one of simple, yii.
+# <site_ip> can be omitted, but it can be required on some server configurations.
 # If <ssh_password> not set it would be generated
 # Examples:
 #   ./init site example.com simple user1 1234567890
@@ -83,6 +86,19 @@ if [ "$action" = "site" ]; then
     exit
   fi
 
+  if [[ "$domain" =~ : ]]; then
+    if [[ "$domain" =~ ^([^:]+):(.+)$ ]]; then
+      domain="${BASH_REMATCH[1]}"
+      # domain ip with ":" on the end to combine it with the port (xxx.xxx.xxx.xxx:80)
+      domain_ip="${BASH_REMATCH[2]}:"
+    else
+      echo "Некорректно указан домен и/или ip-адрес!"
+      exit
+    fi
+  else
+    domain_ip=""
+  fi
+
   if [ ! "$username" ]; then
     echo "Не указано имя пользователя!"
     exit
@@ -132,6 +148,7 @@ if [ "$action" = "site" ]; then
   mkdir -p "$nginx_conf_dir/$username"
   cp "nginx/nginx-vhost-$template.conf.example" "$nginx_conf"
   sed -i "s/<domain>/$domain/g" "$nginx_conf"
+  sed -i "s/<domain_ip>/$domain_ip/g" "$nginx_conf"
   sed -i "s:<project_path>:/var/www/$username/www/$domain:g" "$nginx_conf"
   sed -i "s:<socket_path>:/var/www/$username/php-fpm/$domain.socket:g" "$nginx_conf"
   sed -i "s:<logs_path>:/var/www/$username/logs:g" "$nginx_conf"

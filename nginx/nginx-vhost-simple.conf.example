@@ -1,5 +1,5 @@
 server {
-    listen 80;
+    listen <domain_ip>80;
     server_name <domain>;
 
     root <project_path>;
